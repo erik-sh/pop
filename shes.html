@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Попутчики — поиск поездок</title>
+    <!-- Google Fonts (единственный внешний API) -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* ---------- Глобальные стили ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f4f7fc;
+            color: #333;
+            line-height: 1.4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+
+        /* Шапка */
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eef2f5;
+        }
+        header h1 {
+            font-size: 32px;
+            font-weight: 500;
+            color: #2c7da0;
+            margin-bottom: 8px;
+        }
+        header p {
+            color: #6c7a89;
+            font-size: 16px;
+        }
+        .trip-count {
+            margin-top: 12px;
+            font-size: 14px;
+            background: #eef2f5;
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 30px;
+            color: #2c7da0;
+            font-weight: 500;
+        }
+
+        /* Форма добавления / редактирования */
+        .add-trip {
+            background: #f9fafc;
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            border: 1px solid #eef2f5;
+        }
+        .add-trip h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 140px;
+        }
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #2c3e50;
+        }
+        input[type="text"],
+        input[type="date"],
+        input[type="time"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d0d7de;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #2c7da0;
+            box-shadow: 0 0 0 3px rgba(44,125,160,0.1);
+        }
+        button {
+            background: #2c7da0;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        button:hover {
+            background: #1f5e7a;
+            transform: translateY(-1px);
+        }
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 12px;
+            padding-left: 8px;
+        }
+
+        /* Панель фильтрации и сортировки */
+        .control-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 20px;
+            background: #f9fafc;
+            padding: 16px;
+            border-radius: 16px;
+        }
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            flex: 2;
+        }
+        .filter-group input {
+            width: auto;
+            flex: 1;
+            min-width: 120px;
+        }
+        .sort-btn {
+            background: #ecf0f1;
+            color: #2c3e50;
+            padding: 8px 16px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .sort-btn.active {
+            background: #2c7da0;
+            color: white;
+        }
+        .hint {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 8px;
+            text-align: right;
+        }
+
+        /* Список поездок (карточки) */
+        .trips-list h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        #tripsContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .trip-card {
+            background: white;
+            border: 1px solid #eef2f5;
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.2s;
+        }
+        .trip-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transform: translateX(2px);
+        }
+        .trip-info {
+            flex: 1;
+        }
+        .trip-route {
+            font-weight: 600;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        .trip-datetime {
+            color: #6c7a89;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .trip-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .edit-btn, .delete-btn {
+            padding: 6px 14px;
+            font-size: 13px;
+            border-radius: 30px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+        }
+        .edit-btn {
+            background: #e67e22;
+            color: white;
+        }
+        .edit-btn:hover {
+            background: #d35400;
+        }
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+        .placeholder {
+            text-align: center;
+            color: #95a5a6;
+            padding: 50px;
+            background: #f9fafc;
+            border-radius: 16px;
+            font-style: italic;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            .container {
+                padding: 18px;
+            }
+            .trip-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .trip-actions {
+                align-self: flex-end;
+            }
+            .control-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filter-group {
+                flex-direction: column;
+            }
+            .filter-group input {
+                width: 100%;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Попутчики</h1>
+        <p>Создавайте поездки и находите попутчиков</p>
+        <div class="trip-count">Всего поездок: <span id="count">0</span></div>
+    </header>
+
+    <section class="add-trip">
+        <h2 id="formTitle">Новая поездка</h2>
+        <form id="tripForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="from">Откуда</label>
+                    <input type="text" id="from" placeholder="Город отправления" required>
+                </div>
+                <div class="form-group">
+                    <label for="to">Куда</label>
+                    <input type="text" id="to" placeholder="Город назначения" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="date">Дата</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="time">Время</label>
+                    <input type="time" id="time" required>
+                </div>
+            </div>
+            <button type="submit" id="submitBtn">Добавить поездку</button>
+            <div class="error-message" id="errorMsg"></div>
+        </form>
+    </section>
+
+    <div class="control-bar">
+        <div class="filter-group">
+            <input type="text" id="filterFrom" placeholder="Фильтр откуда">
+            <input type="text" id="filterTo" placeholder="Фильтр куда">
+        </div>
+        <button id="sortBtn" class="sort-btn">Сортировка по дате (сначала ближайшие)</button>
+    </div>
+    <div class="hint">↓↑ Сортировка по дате и времени. Фильтр работает по частичному совпадению.</div>
+
+    <section class="trips-list">
+        <h2>Список поездок</h2>
+        <div id="tripsContainer">
+            <div class="placeholder">Загрузка...</div>
+        </div>
+    </section>
+</div>
+
+<script>
+    // ---------- Работа с localStorage ----------
+    const STORAGE_KEY = 'companion_trips';
+    let editingId = null;          // id редактируемой поездки
+    let sortActive = false;        // флаг сортировки
+
+    // Получить массив поездок
+    function getTrips() {
+        const data = localStorage.getItem(STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+    }
+
+    // Сохранить массив
+    function saveTrips(trips) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(trips));
+    }
+
+    // Добавить поездку
+    function addTrip(trip) {
+        const trips = getTrips();
+        trips.push(trip);
+        saveTrips(trips);
+    }
+
+    // Удалить поездку по id
+    function deleteTripById(id) {
+        let trips = getTrips();
+        trips = trips.filter(trip => trip.id !== id);
+        saveTrips(trips);
+    }
+
+    // Обновить поездку (замена)
+    function updateTrip(updatedTrip) {
+        let trips = getTrips();
+        const index = trips.findIndex(t => t.id === updatedTrip.id);
+        if (index !== -1) {
+            trips[index] = updatedTrip;
+            saveTrips(trips);
+        }
+    }
+
+    // Форматирование даты для отображения
+    function formatDateDisplay(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    // Экранирование HTML (защита от XSS)
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    // Валидация полей
+    function validateTrip(fromVal, toVal, dateVal, timeVal) {
+        if (!fromVal || !toVal) return 'Заполните все поля (откуда и куда).';
+        if (!dateVal) return 'Укажите дату поездки.';
+        if (!timeVal) return 'Укажите время отправления.';
+        const today = new Date().toISOString().slice(0,10);
+        if (dateVal < today) return 'Дата не может быть прошедшей.';
+        if (fromVal.length < 2 || toVal.length < 2) return 'Названия городов должны содержать минимум 2 символа.';
+        const hasLetter = /[a-zA-Zа-яА-ЯёЁ]/;
+        if (!hasLetter.test(fromVal) || !hasLetter.test(toVal)) return 'Названия городов должны содержать буквы.';
+        return null;
+    }
+
+    // Проверка дубликата (одинаковый маршрут и дата, исключая себя при редактировании)
+    function isDuplicate(from, to, date, time, currentId = null) {
+        const trips = getTrips();
+        return trips.some(trip => 
+            trip.id !== currentId &&
+            trip.from.toLowerCase() === from.toLowerCase() &&
+            trip.to.toLowerCase() === to.toLowerCase() &&
+            trip.date === date &&
+            trip.time === time
+        );
+    }
+
+    // Рендер списка с учётом фильтров и сортировки
+    function renderTrips() {
+        let trips = getTrips();
+        // Фильтрация
+        const filterFrom = document.getElementById('filterFrom').value.trim().toLowerCase();
+        const filterTo = document.getElementById('filterTo').value.trim().toLowerCase();
+        if (filterFrom || filterTo) {
+            trips = trips.filter(trip => {
+                const matchFrom = filterFrom ? trip.from.toLowerCase().includes(filterFrom) : true;
+                const matchTo = filterTo ? trip.to.toLowerCase().includes(filterTo) : true;
+                return matchFrom && matchTo;
+            });
+        }
+        // Сортировка (по дате + время, сначала ближайшие)
+        if (sortActive) {
+            trips.sort((a, b) => {
+                const dateTimeA = new Date(`${a.date}T${a.time}`);
+                const dateTimeB = new Date(`${b.date}T${b.time}`);
+                return dateTimeA - dateTimeB;
+            });
+        } else {
+            // сортировка по id (порядок добавления)
+            trips.sort((a, b) => a.id - b.id);
+        }
+
+        const container = document.getElementById('tripsContainer');
+        container.innerHTML = '';
+        if (trips.length === 0) {
+            container.innerHTML = '<div class="placeholder">Пока нет поездок. Создайте первую поездку!</div>';
+            document.getElementById('count').innerText = getTrips().length;
+            return;
+        }
+
+        trips.forEach(trip => {
+            const card = document.createElement('div');
+            card.className = 'trip-card';
+            const datetimeStr = `${formatDateDisplay(trip.date)} в ${trip.time}`;
+            card.innerHTML = `
+                <div class="trip-info">
+                    <div class="trip-route">${escapeHtml(trip.from)} → ${escapeHtml(trip.to)}</div>
+                    <div class="trip-datetime">${escapeHtml(datetimeStr)}</div>
+                </div>
+                <div class="trip-actions">
+                    <button class="edit-btn" data-id="${trip.id}">Редактировать</button>
+                    <button class="delete-btn" data-id="${trip.id}">Удалить</button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        // Обработчики для кнопок удаления и редактирования
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = Number(btn.dataset.id);
+                if (confirm('Вы уверены, что хотите удалить эту поездку?')) {
+                    deleteTripById(id);
+                    renderTrips();
+                    updateCounter();
+                    clearEditingMode();
+                }
+            });
+        });
+
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = Number(btn.dataset.id);
+                const tripsArr = getTrips();
+                const trip = tripsArr.find(t => t.id === id);
+                if (trip) {
+                    editingId = trip.id;
+                    document.getElementById('from').value = trip.from;
+                    document.getElementById('to').value = trip.to;
+                    document.getElementById('date').value = trip.date;
+                    document.getElementById('time').value = trip.time;
+                    document.getElementById('formTitle').innerText = 'Редактирование поездки';
+                    document.getElementById('submitBtn').innerText = 'Сохранить изменения';
+                    // Прокрутка к форме
+                    document.querySelector('.add-trip').scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        updateCounter();
+    }
+
+    // Обновление счётчика (общее количество всех поездок в хранилище, без фильтра)
+    function updateCounter() {
+        const allTrips = getTrips();
+        document.getElementById('count').innerText = allTrips.length;
+    }
+
+    // Сброс режима редактирования
+    function clearEditingMode() {
+        editingId = null;
+        document.getElementById('formTitle').innerText = 'Новая поездка';
+        document.getElementById('submitBtn').innerText = 'Добавить поездку';
+        document.getElementById('tripForm').reset();
+        document.getElementById('errorMsg').innerText = '';
+    }
+
+    // Обработка отправки формы (добавление / редактирование)
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        const from = document.getElementById('from').value.trim();
+        const to = document.getElementById('to').value.trim();
+        const date = document.getElementById('date').value;
+        const time = document.getElementById('time').value;
+        const errorMsgDiv = document.getElementById('errorMsg');
+
+        const validationError = validateTrip(from, to, date, time);
+        if (validationError) {
+            errorMsgDiv.innerText = validationError;
+            return;
+        }
+        errorMsgDiv.innerText = '';
+
+        // Проверка дублирования
+        if (isDuplicate(from, to, date, time, editingId)) {
+            errorMsgDiv.innerText = 'Такая поездка уже существует (откуда, куда, дата, время).';
+            return;
+        }
+
+        if (editingId !== null) {
+            // Редактирование
+            const updatedTrip = {
+                id: editingId,
+                from: from,
+                to: to,
+                date: date,
+                time: time
+            };
+            updateTrip(updatedTrip);
+            clearEditingMode();
+        } else {
+            // Создание новой поездки
+            const newTrip = {
+                id: Date.now(),
+                from: from,
+                to: to,
+                date: date,
+                time: time
+            };
+            addTrip(newTrip);
+            document.getElementById('tripForm').reset();
+        }
+        renderTrips();
+    }
+
+    // Переключение сортировки
+    function toggleSort() {
+        sortActive = !sortActive;
+        const sortBtn = document.getElementById('sortBtn');
+        if (sortActive) {
+            sortBtn.classList.add('active');
+            sortBtn.innerText = 'Сортировка по дате (включена)';
+        } else {
+            sortBtn.classList.remove('active');
+            sortBtn.innerText = 'Сортировка по дате (сначала ближайшие)';
+        }
+        renderTrips();
+    }
+
+    // Инициализация приложения
+    function init() {
+        renderTrips();
+        updateCounter();
+        document.getElementById('tripForm').addEventListener('submit', handleFormSubmit);
+        document.getElementById('sortBtn').addEventListener('click', toggleSort);
+        document.getElementById('filterFrom').addEventListener('input', () => renderTrips());
+        document.getElementById('filterTo').addEventListener('input', () => renderTrips());
+        // Установка минимальной даты в поле date (сегодняшняя)
+        const today = new Date().toISOString().slice(0,10);
+        document.getElementById('date').setAttribute('min', today);
+    }
+
+    init();
+</script>
+</body>
+</html>
